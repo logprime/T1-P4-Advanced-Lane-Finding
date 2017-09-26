@@ -172,7 +172,7 @@ I implemented this step in lines 244-254 in `image_gen.py`.  Here is an example 
 
 Here is the final example of my result on the same test image with all the updated thresholding and slope calculations applied. 
 
-<img src="output_images/finalcombined4.jpg" width="500" />
+<img src="output_images/newcombined4.jpg" width="500" />
 
 ---
 
