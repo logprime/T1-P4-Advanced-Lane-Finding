@@ -184,7 +184,7 @@ Here's my [video result of the original processing](https://youtu.be/4VfX8L1t9nU
 
 Here is my [video result of the updated processing](https://youtu.be/yR34UCBnwnw). Updating the thresholds using HSL based thresholding was critical for getting lanes to remain stable.
 
-Here is my complete pipeline: <img src="output_images/Process_pipeline.jpg" width="400" />
+Here is my complete pipeline: <img src="output_images/Processpipeline.jpg" width="400" />
 
 All the videos including outout of the challenge videos are also stored in my github repo. 
 
