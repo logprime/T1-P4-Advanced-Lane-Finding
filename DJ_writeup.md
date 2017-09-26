@@ -86,6 +86,10 @@ Here's an example of my output for this step:
 *Binary Image*
 <img src="output_images/bin4.jpg" width="500" />
 
+Here is the example based on updated thresholding:
+*Update Binary Image*
+<img src="output_images/newbin4.jpg" width="500" />
+
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
 The code for my perspective transform is in line 174-189 of `image_gen.py`and reproduced below:-
@@ -152,6 +156,9 @@ Left and right polynomial fit areshow in line  line 226 through 234  of `image_g
 *Polynomial Image*
 <img src="output_images/road4.jpg" width="500" />
 
+*Polynomial Image*
+<img src="output_images/newroad4.jpg" width="500" />
+
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -162,6 +169,10 @@ I did this in lines 259-261 in my code in `image_gen.py`. I used left lane for c
 I implemented this step in lines 244-254 in `image_gen.py`.  Here is an example of my result on a test image:
 
 <img src="output_images/combined4.jpg" width="500" />
+
+Here is the final example of my result on the same test image with all the updated thresholding and slope calculations applied. 
+
+<img src="output_images/finalcombined4.jpg" width="500" />
 
 ---
 

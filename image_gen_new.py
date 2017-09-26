@@ -262,7 +262,30 @@ def fit_continuous(left_fit, right_fit, binary_warped):
         
     return  left_fit_updated, right_fit_updated
 
+#Calc Curvature
+def curvature(left_fit, right_fit, binary_warped):
+    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
+    y_eval = np.max(ploty)
+    
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
 
+
+    # Fit new polynomials to x,y in world space
+    #leftx = left_fit[0]*ploty**2+left_fit[1]*ploty+left_fit[2]
+    #rightx = right_fit[0]*ploty**2+right_fit[1]*ploty+left_fit[2]
+        
+    #left_fit_cr = np.polyfit(ploty*ym_per_pix, leftx*xm_per_pix, 2)
+    #right_fit_cr = np.polyfit(ploty*ym_per_pix, rightx*xm_per_pix, 2)
+    
+    # Calculate the new radii of curvature
+    left_curverad = ((1 + (2*left_fit[0]*y_eval*ym_per_pix + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval*ym_per_pix + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    center = (((left_fit[0]*720**2+left_fit[1]*720+left_fit[2]) +(right_fit[0]*720**2+right_fit[1]*720+right_fit[2]) ) /2 - 640)*xm_per_pix
+    
+    # Now our radius of curvature is in meters
+    #print(left_curverad, 'm', right_curverad, 'm')
+    return left_curverad, right_curverad, center
 
 
 # Make a list of test images
@@ -273,7 +296,9 @@ images = glob.glob("./test_images/test*.jpg")
 for idx, fname in enumerate(images):
     # Read in image
     img = cv2.imread(fname)
+    imgRGB = img
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    imgRGB = img
 
     # undistort image
     img = cv2.undistort(imgRGB, mtx,dist,None,mtx)
@@ -375,6 +400,8 @@ for idx, fname in enumerate(images):
     #right_fitx = right_fit[0]*yvals*yvals*yvals + right_fit[1]*yvals*yvals + right_fit[2]*yvals + right_fit[3]
     right_fitx = np.array(right_fitx,np.int32)
      
+    left_curv, right_curv, center_off = curvature(left_fit, right_fit, warped)
+
     left_lane = np.array(list(zip(np.concatenate((left_fitx-window_width/2,left_fitx[::-1]+window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
     right_lane = np.array(list(zip(np.concatenate((right_fitx-window_width/2,right_fitx[::-1]+window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
     middel_marker = np.array(list(zip(np.concatenate((left_fitx+window_width/2,right_fitx[::-1]-window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
@@ -391,9 +418,10 @@ for idx, fname in enumerate(images):
     road_warped = cv2.warpPerspective(road,Minv,img_size,flags=cv2.INTER_LINEAR)
     road_warped_bkg = cv2.warpPerspective(road_bkg,Minv,img_size,flags=cv2.INTER_LINEAR)
 
-    base = cv2.addWeighted(img, 1.0, road_warped_bkg, -1.0, 0.0)
+    base = cv2.addWeighted(imgRGB, 1.0, road_warped_bkg, -1.0, 0.0)
     result = cv2.addWeighted(base, 1.0, road_warped, 1.0, 0.0)  # Setting up final overlaid image with lane markers
-
+    combined = result
+    
     ym_per_pix = curve_centers.ym_per_pix # meters per pixel in y dim
     xm_per_pix = curve_centers.xm_per_pix # meters per pixel in x dim
 
@@ -408,15 +436,18 @@ for idx, fname in enumerate(images):
     if center_diff <= 0:
         side_pos = 'right'
 
+    avg_curv = (left_curv+right_curv)/2
+    
     # draw the text showingn curvature, offset and speed
-    cv2.putText(result, 'Radius of Curvature = ' +str(round(curverad,3))+'(m)',(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
-    cv2.putText(result,'Vehicle is '+str(abs(round(center_diff,3))) +'m '+side_pos+' of center',(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
+    cv2.putText(result, 'Radius of Curvature = ' +str(round(avg_curv,3))+'(m)',(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
+    cv2.putText(result,'Vehicle is '+str(abs(round(center_off,3))) +'m '+side_pos+' of center',(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
 
     # Final combination that works best includes
     # color_thresh1 based on s and v channel and preprocessing which includes gradx, grady and c_binary
     
-    result = bin_image
-    result = road
+    result = combined
+    #result = bin_image
+    #result = road
     #result = green_boxes       
     #result = warped
     #result = undistort
