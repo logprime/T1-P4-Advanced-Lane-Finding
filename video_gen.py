@@ -158,10 +158,10 @@ def process_image(img):
     imgy = img.shape[0] # This is 720, Ymax
 
     # The area of interest is defined as ratio of the image
-    left_bottomx = 0.2*imgx  
+    left_bottomx = 0.15*imgx  
     right_bottomx = 0.85*imgx
-    apexy = 0.75*imgy     # Height of the apex y coordinate
-    d = 80           # Distance between the two apex points making rectangle
+    apexy = 0.60*imgy     # Height of the apex y coordinate
+    d = 100           # Distance between the two apex points making rectangle
     # Step 4: Define the area of interest for lane detection
     quad_vertices = np.array([[(left_bottomx,imgy),(imgx/2-d/2+10,apexy),(imgx/2+d/2+10,apexy),
                           (right_bottomx,imgy)]],dtype=np.int32)
@@ -200,9 +200,15 @@ def process_image(img):
     dst = np.float32([[offset, 0], [img_size[0]-offset, 0], [img_size[0]-offset, img_size[1]], [offset, img_size[1]]])
     '''
     
+    
+    # Trying updated Source and Destination Coordinates (based on feedback from the reviewer)
+   src = np.float32([[585, 450], [203, 720], [1127, 720], [685, 450]])
+   dst = np.float32([[320, 0], [320, 720], [960,720], [960, 0]])
+
+
     # Setting source and destination for 4 corners of the trapezoid
-    src = np.float32([[220, 700], [1100, 700], [690, 450], [590, 450]])
-    dst = np.float32([[300, 720], [980, 720], [980, 0], [300, 0]])
+    #src = np.float32([[220, 700], [1100, 700], [690, 450], [590, 450]])
+    #dst = np.float32([[300, 720], [980, 720], [980, 0], [300, 0]])
    
     #src = np.float32([[230, 700], [1100, 700], [680, 450], [600, 450]])
     #dst = np.float32([[310, 710], [960, 710], [960, 10], [310, 10]])

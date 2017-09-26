@@ -24,12 +24,15 @@ dist = dist_pickle["dist"]
 def abs_sobel_thresh(img, orient='x', sobel_kernel=3,thresh=(0,255)):
    # Gradient in x and y direction
     
-   gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+   #gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
+ # To improve sobel thresholding
+   imghsl = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+   
    if orient == 'x':
-        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 1, 0,ksize=sobel_kernel))
+        abs_sobel = np.absolute(cv2.Sobel(imghsl[:,:,1], cv2.CV_64F, 1, 0,ksize=sobel_kernel))
    if orient == 'y':
-        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel))
+        abs_sobel = np.absolute(cv2.Sobel(imghsl[:,:,2], cv2.CV_64F, 0, 1, ksize=sobel_kernel))
     # Rescale back to 8 bit integer
    scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
     # Create a copy and apply the threshold
@@ -171,8 +174,12 @@ for idx, fname in enumerate(images):
     #src = np.float32([[220, 700], [1100, 700], [690, 450], [590, 450]])
     #dst = np.float32([[300, 700], [1000, 700], [1000, 10], [300, 10]])
    
-    src = np.float32([[230, 700], [1200, 700], [680, 450], [600, 450]])
-    dst = np.float32([[310, 710], [960, 710], [960, 10], [310, 10]])
+#    src = np.float32([[230, 700], [1200, 700], [680, 450], [600, 450]])
+ #   dst = np.float32([[310, 710], [960, 710], [960, 10], [310, 10]])
+    
+    src = np.float32([[585, 450], [203, 720], [1127, 720], [685, 450]])
+    dst = np.float32([[320, 0], [320, 720], [960,720], [960, 0]])
+
     
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst,src)
@@ -277,10 +284,10 @@ for idx, fname in enumerate(images):
     #result = bin_image
     #result = road
     #result = green_boxes       
-    #result = warped
+    result = warped
     #result = undistort
     
-    write_name = "./test_images/tracked_final"+str(idx)+'.jpg'
+    write_name = "./test_images/tracked_warped"+str(idx)+'.jpg'
     cv2.imwrite(write_name,result)
     
 

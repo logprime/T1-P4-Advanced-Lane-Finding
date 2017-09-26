@@ -128,6 +128,19 @@ Following shows the output of the perspective transform on the listed *Original 
 *Warped Image*
 <img src="output_images/warped4.jpg" width="500" />
 
+My warped lane was not quite as parallel as I would like to have seen them. Hence I played with source and destination coordinates and landed up on the following:-
+<pre><code>
+src = np.float32([[585, 450], [203, 720], [1127, 720], [685, 450]])
+dst = np.float32([[320, 0], [320, 720], [960,720], [960, 0]])
+</code></pre>
+
+<img src="output_images/srcdst.jpg" width="500" />
+
+Here is the updated warped image which looks much better.
+* Updated Warped Image*
+<img src="output_images/betterwarped4.jpg" width="500" />
+
+
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
@@ -156,7 +169,11 @@ I implemented this step in lines 244-254 in `image_gen.py`.  Here is an example 
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's my [video result](https://youtu.be/4VfX8L1t9nU		)
+Here's my [video result of the original processing](https://youtu.be/4VfX8L1t9nU	). There are frames where the lanes still jump around a bit.
+
+Here is my [video result of the updated processing](https://youtu.be/yR34UCBnwnw). Updating the thresholds using HSL based thresholding was critical for getting lanes to remain stable.
+
+Here is my complete pipeline: <img src="output_images/Process_pipeline.jpg" width="400" />
 
 All the videos including outout of the challenge videos are also stored in my github repo. 
 
