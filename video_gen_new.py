@@ -172,7 +172,10 @@ def region_of_interest(img, vertices):
 def fitlines(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
+
     histogram = np.sum(binary_warped[binary_warped.shape[0]//2:,:], axis=0)
+
+
     # Create an output image to draw on and  visualize the result
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
     
@@ -291,14 +294,6 @@ def curvature(left_fit, right_fit, binary_warped):
     
     ym_per_pix = 30/720 # meters per pixel in y dimension
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
-
-
-    # Fit new polynomials to x,y in world space
-    #leftx = left_fit[0]*ploty**2+left_fit[1]*ploty+left_fit[2]
-    #rightx = right_fit[0]*ploty**2+right_fit[1]*ploty+left_fit[2]
-        
-    #left_fit_cr = np.polyfit(ploty*ym_per_pix, leftx*xm_per_pix, 2)
-    #right_fit_cr = np.polyfit(ploty*ym_per_pix, rightx*xm_per_pix, 2)
     
     # Calculate the new radii of curvature
     left_curverad = ((1 + (2*left_fit[0]*y_eval*ym_per_pix + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
@@ -306,50 +301,83 @@ def curvature(left_fit, right_fit, binary_warped):
     center = (((left_fit[0]*720**2+left_fit[1]*720+left_fit[2]) +(right_fit[0]*720**2+right_fit[1]*720+right_fit[2]) ) /2 - 640)*xm_per_pix
     
     # Now our radius of curvature is in meters
-    #print(left_curverad, 'm', right_curverad, 'm')
     return left_curverad, right_curverad, center
 
+def sanity_check(left_fit, right_fit, minSlope, maxSlope):
+    #Performs a sanity check on the lanes
+    #Check 1: check if left and right fits exists
+    #Check 2: Calculates the tangent between left and right in two points, and check if it is in a reasonable threshold
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    if len(left_fit) ==0 or len(right_fit) == 0:
+        status = False
+        d0=0
+        d1=0
+        #Previous fitlines routine returns empty list if not finds
+    else:
+        #Difference of slope
+        L_0 = 2*left_fit[0]*460+left_fit[1]
+        R_0 = 2*right_fit[0]*460+right_fit[1]
+        d0 =  np.abs(L_0-R_0)
+
+        L_1 = 2*left_fit[0]*720+left_fit[1]
+        R_1 = 2*right_fit[0]*720+right_fit[1]
+        d1 =  np.abs(L_1-R_1)
+
+        
+        if d0>= minSlope and d0<= maxSlope and d1>= minSlope and d1<= maxSlope:
+            status = True
+        else:
+            status = False
+            
+    return(status, d0, d1)
+
+
+
+global counter
+counter=0
+ref_left =np.array([-0.0001,0,400])
+ref_right=np.array([-0.0001,0,1000])   
+left_fit =np.array([-0.0001,0,400])
+right_fit=np.array([-0.0001,0,1000])   
 
 
 def process_image(img):
     
+    global counter
+
     # undistort image
     img = cv2.undistort(img, mtx,dist,None,mtx)
     img_orig = img
 
-    ##  Experimented with Masking Addition
-    # Define the vertices of a mask. Image size is (720,1280) with 3 numbers (RGB)for each element
-    imgx = img.shape[1] # This is 1280, Xmax
-    imgy = img.shape[0] # This is 720, Ymax
-
-    
-        
+    #2.Magnitude Threshold
+    #Threshold color    
     yellow_low = np.array([0,100,100])
     yellow_high = np.array([50,255,255])
-
     white_low = np.array([18,0,180])
     white_high = np.array([255,80,255])
-
+    global ref_left 
+    global ref_right
+    global left_fit
+    global right_fit
+    
+   
+    # Process image and generate binary pixel of interests
     imgThres_yellow = hls_color_thresh(img,yellow_low,yellow_high)
     imgThres_white = hls_color_thresh(img,white_low,white_high)
-
-    imgThres_both =np.zeros_like(imgThres_yellow)
-
-    imgThres_both[(imgThres_yellow==1) | (imgThres_white==1)] =255
-
-    # Process image and generate binary pixel of interests
-    preprocessImage = np.zeros_like(img[:,:,0])
     gradx = abs_sobel_thresh(img,orient='x',sobel_kernel=9,thresh=(80,220)) 
-    c_binary = color_thresh1(img, sthresh=(100,255), vthresh=(50,255))
-    #c_binary = color_thresh2(img, sthresh=(50,255), vthresh=(100,255), lthresh=(50,255))
-    m_binary = mag_thresh(img, sobel_kernel=3, mag_thresh=(0,25))
-    d_binary = dir_threshold(img, sobel_kernel=15, thresh=(0.8,1.5))
+    
+    preprocessImage = np.zeros_like(img[:,:,0])
     preprocessImage[((gradx == 1) | (imgThres_yellow==1) | (imgThres_white==1))] = 255
     #preprocessImage[((gradx == 1) & (grady == 1) | (m_binary == 1) & (d_binary == 1) & (c_binary == 1))] = 255
+    #c_binary = color_thresh1(img, sthresh=(100,255), vthresh=(50,255))
+    #c_binary = color_thresh2(img, sthresh=(50,255), vthresh=(100,255), lthresh=(50,255))
+   # m_binary = mag_thresh(img, sobel_kernel=3, mag_thresh=(0,25))
+    #d_binary = dir_threshold(img, sobel_kernel=15, thresh=(0.8,1.5))
+    
     bin_image = preprocessImage
     
     # Define the region parameters taken from https://github.com/wonjunee/Advanced-Lane-Finding
-
+    # Masking of the binary preprocessed image
     imshape = img.shape
     left_bottom = (100, imshape[0])
     right_bottom = (imshape[1] - 20, imshape[0])
@@ -370,27 +398,45 @@ def process_image(img):
     
     # Definition for points to use for perspective transform
     img_size = (img.shape[1],img.shape[0])
-    #print (img_size)
-    
-    # Tweaking source and destination for 4 corners of the trapezoid per reviewer comment
+    # img.shape[1] # This is 1280, Xmax
+    # img.shape[0] # This is 720, Ymax
+    # Generate Binary Warped Image using perspective transform
+    #Tweaking source and destination for 4 corners of the trapezoid per reviewer comment
     src = np.float32([[585, 450], [203, 720], [1127, 720], [685, 450]])
     dst = np.float32([[320, 0], [320, 720], [960,720], [960, 0]])
-
-    # Setting source and destination for 4 corners of the trapezoid
-    #src = np.float32([[220, 700], [1100, 700], [690, 450], [590, 450]])
-    #dst = np.float32([[300, 720], [980, 720], [980, 0], [300, 0]])
-   
-    #src = np.float32([[230, 700], [1100, 700], [680, 450], [600, 450]])
-    #dst = np.float32([[310, 710], [960, 710], [960, 10], [310, 10]])
     
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst,src)
     warped = cv2.warpPerspective(preprocessImage, M, img_size, flags=cv2.INTER_LINEAR)
+    ########
+    
+    if counter==0:
+        left_fit, right_fit,out_imgfit = fitlines(warped)
+    else:
+        left_fit, right_fit = fit_continuous(left_fit, right_fit, warped)
+    
+#    left_fit,right_fit,out_img = fitlines(warped)
 
-    # Mask warped image
+    status_sanity, d0, d1 =sanity_check(left_fit, right_fit, 0, .55)
 
+    #Calc curvature and center
+    if status_sanity  == True:        
+        #Save as last reliable fit
+        ref_left, ref_right = left_fit, right_fit        
+        counter+=1
+    else:        #Use the last realible fit
+        left_fit, right_fit = ref_left, ref_right
+        
+    left_curv, right_curv, center_off = curvature(left_fit, right_fit, warped)
+
+    ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0] )
+    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    
+    
+    
     window_width =  25  #60
-    window_height = 80  #80 based on Udacity class 
+    window_height = 80  #80 based on Udacity classlass 
     # Use Offset for window sliding
     Offset = 25
     
@@ -433,18 +479,8 @@ def process_image(img):
     yvals = range(0,warped.shape[0])
     #yvals = np.linspace(0, 719, num=720)
     #print(warped.shape[0])
-    res_yvals = np.arange(warped.shape[0]-(window_height/2),0,-window_height)
-    left_fit,right_fit,out_img = fitlines(warped)
+    #res_yvals = np.arange(warped.shape[0]-(window_height/2),0,-window_height)
 
-    left_fitx = left_fit[0]*yvals*yvals + left_fit[1]*yvals + left_fit[2]
-    left_fitx = np.array(left_fitx,np.int32)
-
-    #right_fit = np.polyfit(res_yvals, rightx, 3)
-    right_fitx = right_fit[0]*yvals*yvals + right_fit[1]*yvals + right_fit[2]
-    #right_fitx = right_fit[0]*yvals*yvals*yvals + right_fit[1]*yvals*yvals + right_fit[2]*yvals + right_fit[3]
-    right_fitx = np.array(right_fitx,np.int32)
-   
-    left_curv, right_curv, center_off = curvature(left_fit, right_fit, warped)
 
     left_lane = np.array(list(zip(np.concatenate((left_fitx-window_width/2,left_fitx[::-1]+window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
     right_lane = np.array(list(zip(np.concatenate((right_fitx-window_width/2,right_fitx[::-1]+window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
@@ -465,25 +501,24 @@ def process_image(img):
     base = cv2.addWeighted(img_orig, 1.0, road_warped_bkg, -1.0, 0.0)
     result = cv2.addWeighted(base, 1.0, road_warped, 1.0, 0.0)  # Setting up final overlaid image with lane markers
 
-    ym_per_pix = curve_centers.ym_per_pix # meters per pixel in y dim
-    xm_per_pix = curve_centers.xm_per_pix # meters per pixel in x dim
+    #ym_per_pix = curve_centers.ym_per_pix # meters per pixel in y dim
+    #xm_per_pix = curve_centers.xm_per_pix # meters per pixel in x dim
 
     # Track left lane curvature as we are using leftx
-    curve_fit_cr = np.polyfit(np.array(res_yvals,np.float32)*ym_per_pix, np.array(leftx,np.float32)*xm_per_pix, 2)
-    curverad = ((1 + (2*curve_fit_cr[0]*yvals[-1]*ym_per_pix + curve_fit_cr[1])**2)**1.5) / np.absolute(2*curve_fit_cr[0])
+   # curve_fit_cr = np.polyfit(np.array(res_yvals,np.float32)*ym_per_pix, np.array(leftx,np.float32)*xm_per_pix, 2)
+    #curverad = ((1 + (2*curve_fit_cr[0]*yvals[-1]*ym_per_pix + curve_fit_cr[1])**2)**1.5) / np.absolute(2*curve_fit_cr[0])
     
-    left_curv, right_curv, center_off = curvature(left_fit, right_fit, warped)
-
     
     # Calculate the offset of the car on the road
-    camera_center = (left_fitx[-1] + right_fitx[-1])/2
-    center_diff = (camera_center-warped.shape[1]/2)*xm_per_pix
+    #camera_center = (left_fitx[-1] + right_fitx[-1])/2
+    #center_diff = (camera_center-warped.shape[1]/2)*xm_per_pix
     side_pos = 'left'
-    if center_diff <= 0:
+    if center_off <= 0:
         side_pos = 'right'
 
+    avg_curv = (left_curv+right_curv)/2
     # draw the text showingn curvature, offset and speed
-    cv2.putText(result, 'Radius of Curvature = ' +str(round(left_curv,3))+'(m)',(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
+    cv2.putText(result, 'Radius of Curvature = ' +str(round(avg_curv,3))+'(m)',(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
     cv2.putText(result,'Vehicle is '+str(abs(round(center_off,3))) +'m '+side_pos+' of center',(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
 
     # Final combination that works best includes
@@ -496,17 +531,18 @@ def process_image(img):
     
     return result
 
-#Input_video = 'harder_challenge_video.mp4'
+Input_video = 'harder_challenge_video.mp4'
 #Input_video = 'output1_tracked.mp4'
-Input_video = 'project_video.mp4'
+#Input_video = 'project_video.mp4'
 #Input_video = 'challenge_video.mp4'
 
-Output_video = 'output1_tracked_new.mp4'
-#Output_video = 'output_challenge.mp4'
-#Output_video = 'output_harder_challenge.mp4'
+#Output_video = 'output1_new_updated.mp4'
+#Output_video = 'output_challenge_updated.mp4'
+Output_video = 'output_harder_challenge_updated.mp4'
 
-
+#clip1 = VideoFileClip(Input_video).subclip(20,23)
 clip1 = VideoFileClip(Input_video)
+
 video_clip = clip1.fl_image(process_image)   # Function expects color images
 video_clip.write_videofile(Output_video, audio=False)
 
