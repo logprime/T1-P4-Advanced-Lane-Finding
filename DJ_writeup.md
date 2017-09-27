@@ -166,14 +166,11 @@ I did this in lines 259-261 in my code in `image_gen.py`. I used left lane for c
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines 244-254 in `image_gen.py`.  Here is an example of my result on a test image:
-
-<img src="output_images/combined4.jpg" width="500" />
-
-Here is the final example of my result on the same test image with all the updated thresholding and slope calculations applied. 
+I implemented this step in lines 244-254 in `image_gen.py`.  Here is the final example of my result on the test image with all the updated thresholding and slope calculations applied. 
 
 <img src="output_images/newcombined4.jpg" width="500" />
 
+#### 7. Radius of calculation for the first curve
 The radius of curvature of the first curve is shown below and very close to 1mile (~1.59km) as expected.
 <img src="output_images/rcfirstcurve.png" width="500" />
 
