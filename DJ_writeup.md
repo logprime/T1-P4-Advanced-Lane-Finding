@@ -174,13 +174,16 @@ Here is the final example of my result on the same test image with all the updat
 
 <img src="output_images/newcombined4.jpg" width="500" />
 
----
+The radius of curvature of the first curve is shown below and very close to 1mile (~1.59km) as expected.
+<img src="output_images/rcfirstcurve.png" width="500" />
+
+
 
 ### Pipeline (video)
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's my [video result of the original processing](https://youtu.be/CNFYV0gwk6A	). This corresponds to the `output1_fixed` video in my submission directory. 
+Here's my [video result of the original processing](https://youtu.be/CNFYV0gwk6A	). This corresponds to the `output1_fixed_0927` video in my submission directory. All frames identify the lanes properly.
 
 Here is my complete pipeline: 
 <img src="output_images/Processpipeline.JPG" width="500" />
