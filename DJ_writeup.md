@@ -180,9 +180,7 @@ Here is the final example of my result on the same test image with all the updat
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's my [video result of the original processing](https://youtu.be/4VfX8L1t9nU	). There are frames where the lanes still jump around a bit.
-
-Here is my [video result of the updated processing](https://youtu.be/yR34UCBnwnw). Updating the thresholds using HSL based thresholding was critical for getting lanes to remain stable.
+Here's my [video result of the original processing](https://youtu.be/CNFYV0gwk6A	). This corresponds to the `output1_fixed` video in my submission directory. 
 
 Here is my complete pipeline: 
 <img src="output_images/Processpipeline.JPG" width="500" />
