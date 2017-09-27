@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Sep 23 08:38:16 2017
-
 @author: Dharmesh Jani
 """
 
@@ -239,17 +238,20 @@ def fitlines(binary_warped):
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds] 
     
+    ym_per_pix = 1 # meters per pixel in y dimension
+    xm_per_pix = 1 # meters per pixel in x dimension
+
     
     # Fit a second order polynomial to each
     if len(leftx) == 0:
         left_fit =[]
     else:
-        left_fit = np.polyfit(lefty, leftx, 2)
+        left_fit = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
     
     if len(rightx) == 0:
         right_fit =[]
     else:
-        right_fit = np.polyfit(righty, rightx, 2)
+        right_fit = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
     
 
     
@@ -267,6 +269,10 @@ def fit_continuous(left_fit, right_fit, binary_warped):
     left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] + margin))) 
     right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] + margin)))  
 
+    ym_per_pix = 1 # meters per pixel in y dimension
+    xm_per_pix = 1 # meters per pixel in x dimension
+
+
     # Again, extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
     lefty = nonzeroy[left_lane_inds] 
@@ -277,13 +283,13 @@ def fit_continuous(left_fit, right_fit, binary_warped):
     if len(leftx) == 0:
         left_fit_updated =[]
     else:
-        left_fit_updated = np.polyfit(lefty, leftx, 2)
+        left_fit_updated = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
     
     
     if len(rightx) == 0:
         right_fit_updated =[]
     else:
-        right_fit_updated = np.polyfit(righty, rightx, 2)
+        right_fit_updated = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
         
     return  left_fit_updated, right_fit_updated
 
@@ -307,7 +313,6 @@ def sanity_check(left_fit, right_fit, minSlope, maxSlope):
     #Performs a sanity check on the lanes
     #Check 1: check if left and right fits exists
     #Check 2: Calculates the tangent between left and right in two points, and check if it is in a reasonable threshold
-    xm_per_pix = 3.7/700 # meters per pixel in x dimension
     if len(left_fit) ==0 or len(right_fit) == 0:
         status = False
         d0=0
@@ -479,7 +484,7 @@ def process_image(img):
     yvals = range(0,warped.shape[0])
     #yvals = np.linspace(0, 719, num=720)
     #print(warped.shape[0])
-    #res_yvals = np.arange(warped.shape[0]-(window_height/2),0,-window_height)
+    res_yvals = np.arange(warped.shape[0]-(window_height/2),0,-window_height)
 
 
     left_lane = np.array(list(zip(np.concatenate((left_fitx-window_width/2,left_fitx[::-1]+window_width/2),axis=0), np.concatenate((yvals,yvals[::-1]),axis=0))),np.int32)
@@ -501,22 +506,24 @@ def process_image(img):
     base = cv2.addWeighted(img_orig, 1.0, road_warped_bkg, -1.0, 0.0)
     result = cv2.addWeighted(base, 1.0, road_warped, 1.0, 0.0)  # Setting up final overlaid image with lane markers
 
-    #ym_per_pix = curve_centers.ym_per_pix # meters per pixel in y dim
-    #xm_per_pix = curve_centers.xm_per_pix # meters per pixel in x dim
+    ym_per_pix = curve_centers.ym_per_pix # meters per pixel in y dim
+    xm_per_pix = curve_centers.xm_per_pix # meters per pixel in x dim
 
     # Track left lane curvature as we are using leftx
-   # curve_fit_cr = np.polyfit(np.array(res_yvals,np.float32)*ym_per_pix, np.array(leftx,np.float32)*xm_per_pix, 2)
+    #curve_fit_cr = np.polyfit(np.array(res_yvals,np.float32)*ym_per_pix, np.array(leftx,np.float32)*xm_per_pix, 2)
     #curverad = ((1 + (2*curve_fit_cr[0]*yvals[-1]*ym_per_pix + curve_fit_cr[1])**2)**1.5) / np.absolute(2*curve_fit_cr[0])
     
     
     # Calculate the offset of the car on the road
     #camera_center = (left_fitx[-1] + right_fitx[-1])/2
     #center_diff = (camera_center-warped.shape[1]/2)*xm_per_pix
+    
     side_pos = 'left'
     if center_off <= 0:
         side_pos = 'right'
 
     avg_curv = (left_curv+right_curv)/2
+    
     # draw the text showingn curvature, offset and speed
     cv2.putText(result, 'Radius of Curvature = ' +str(round(avg_curv,3))+'(m)',(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
     cv2.putText(result,'Vehicle is '+str(abs(round(center_off,3))) +'m '+side_pos+' of center',(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2)
@@ -531,19 +538,18 @@ def process_image(img):
     
     return result
 
-Input_video = 'harder_challenge_video.mp4'
+#Input_video = 'harder_challenge_video.mp4'
 #Input_video = 'output1_tracked.mp4'
-#Input_video = 'project_video.mp4'
+Input_video = 'project_video.mp4'
 #Input_video = 'challenge_video.mp4'
 
-#Output_video = 'output1_new_updated.mp4'
+Output_video = 'output1_fixed_0927_new.mp4'
 #Output_video = 'output_challenge_updated.mp4'
-Output_video = 'output_harder_challenge_updated.mp4'
+#Output_video = 'output_harder_challenge_updated.mp4'
 
 #clip1 = VideoFileClip(Input_video).subclip(20,23)
 clip1 = VideoFileClip(Input_video)
 
 video_clip = clip1.fl_image(process_image)   # Function expects color images
 video_clip.write_videofile(Output_video, audio=False)
-
 
